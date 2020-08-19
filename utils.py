@@ -21,12 +21,9 @@ Some useful methods and constants for picking up a ball with dVRK and CoppeliaSi
 PSM_J1_TO_BASE_LINK_ROT = PyKDL.Rotation.RPY(pi / 2, - pi, 0)
 PSM_J1_TO_BASE_LINK_TF = PyKDL.Frame(PSM_J1_TO_BASE_LINK_ROT, PyKDL.Vector())
 
-# TODO: make this less hardcoded
-RED_BALL_FEAT_PATH = './red_ball.csv'
-BLUE_BALL_FEAT_PATH = './blue_ball.csv'
-GREEN_BALL_FEAT_PATH = './green_ball.csv'
+BLUE_CIRCLE_FEAT_PATH = './blue_circle.csv'
 
-FEAT_PATHS = [RED_BALL_FEAT_PATH, BLUE_BALL_FEAT_PATH, GREEN_BALL_FEAT_PATH]
+FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
 
 # TODO: now that the camera is right side up, maybe this can be changed
 CV_TO_CAM_FRAME_ROT = np.asarray([
@@ -36,13 +33,12 @@ CV_TO_CAM_FRAME_ROT = np.asarray([
 ])
 
 class Object3d:
-    def __init__(self, pos, type, color):
+    def __init__(self, pos, color):
         self.pos = pos
-        self.type = type
         self.color = color
     
     def __str__(self):
-        return "<Object3d pos: {} type: {} color: {}>".format(self.pos, self.type, self.color)
+        return "<Object3d pos: {} color: {}>".format(self.pos, self.color)
 
     def __repr__(self):
         return self.__str__()
@@ -58,23 +54,6 @@ def get_objects_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_t
     fp = feature_processor(FEAT_PATHS)
     left_feats, left_frame = fp.FindImageFeatures(left_image_msg)
     right_feats, right_frame = fp.FindImageFeatures(right_image_msg)
-
-    # discard features with image y > bowl y
-    left_bowl = None 
-    for left_feat in left_feats:
-        if left_feat.type == FeatureType.BOWL:
-            left_bowl = left_feat
-
-    left_feats = filter(lambda feat : feat.pos[1] >= left_bowl.pos[1], left_feats)
-    left_feats.sort(key=lambda feat: feat.pos[1], reverse=False)
-
-    right_bowl = None 
-    for right_feat in right_feats:
-        if right_feat.type == FeatureType.BOWL:
-            right_bowl = right_feat
-
-    right_feats = filter(lambda feat : feat.pos[1] >= right_bowl.pos[1], right_feats)
-    right_feats.sort(key=lambda feat: feat.pos[1], reverse=False)
 
     matched_feats = []
 
@@ -107,7 +86,7 @@ def get_objects_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_t
         if left_feat.color != right_feat.color:
             rospy.loginfo("Color mismatch between left and right detection")
 
-        objects.append(Object3d(pos, left_feat.type, left_feat.color))
+        objects.append(Object3d(pos, left_feat.color))
     return objects, np.hstack((left_frame, right_frame))
 
 
