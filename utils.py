@@ -25,6 +25,7 @@ BLUE_CIRCLE_FEAT_PATH = './blue_circle.csv'
 
 FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
 
+
 # TODO: now that the camera is right side up, maybe this can be changed
 CV_TO_CAM_FRAME_ROT = np.asarray([
     [-1, 0, 0], 
@@ -32,23 +33,12 @@ CV_TO_CAM_FRAME_ROT = np.asarray([
     [0, 0, 1]
 ])
 
-class Object3d:
-    def __init__(self, pos, color):
-        self.pos = pos
-        self.color = color
-    
-    def __str__(self):
-        return "<Object3d pos: {} color: {}>".format(self.pos, self.color)
-
-    def __repr__(self):
-        return self.__str__()
-
 
 def clamp_image_coords(pt, im_shape):
     return tuple(np.clip(pt, (0, 0), np.array(im_shape)[:2] - np.array([1, 1])))
 
 
-def get_objects_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_to_world_tf):
+def get_points_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_to_world_tf):
     # this gets the position of the red ball thing in the camera frame
     # and the image with X's on the desired features
     fp = feature_processor(FEAT_PATHS)
@@ -58,16 +48,8 @@ def get_objects_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_t
     matched_feats = []
 
     for left_feat in left_feats:
-        same_color_feats = filter(lambda right_feat: right_feat.color == left_feat.color, 
-                                  right_feats)
-
-        if not same_color_feats:
-            rospy.logwarn(
-                "Failed to match left detection {} to a right detection!".format(left_feat))
-            continue
-
         matched_feats.append((left_feat, 
-                              min(same_color_feats, 
+                              min(right_feats, 
                                   key=lambda right_feat: (right_feat.pos[0] - left_feat.pos[0]) ** 2 \
                                                        + (right_feat.pos[1] - left_feat.pos[1]) ** 2)))
 
@@ -75,18 +57,11 @@ def get_objects_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_t
     for left_feat, right_feat in matched_feats:
         disparity = abs(left_feat.pos[0] - right_feat.pos[0])
         pos_cv = stereo_cam_model.projectPixelTo3d(left_feat.pos, float(disparity))
-        # there's a fixed rotation to convert this to the camera coordinate frame
         pos_cam = np.matmul(CV_TO_CAM_FRAME_ROT, pos_cv)
-        pos = None
-        if cam_to_world_tf is not None:
-            pos = cam_to_world_tf * PyKDL.Vector(*pos_cam)
-        else:
-            pos = PyKDL.Vector(*pos_cam)
-
-        if left_feat.color != right_feat.color:
-            rospy.loginfo("Color mismatch between left and right detection")
-
-        objects.append(Object3d(pos, left_feat.color))
+        print(pos_cam)
+        pos = PyKDL.Vector(*pos_cam)
+        print(pos)
+        objects.append(cam_to_world_tf * pos)
     return objects, np.hstack((left_frame, right_frame))
 
 
@@ -97,12 +72,4 @@ def tf_to_pykdl_frame(tfl_frame):
     return PyKDL.Frame(rot, pos2)
 
 
-class World:
-    def __init__(self, all_detections):
-        self.objects = []
 
-    def __str__(self):
-        return "<World objects: {}\nbowl: {}>".format(self.objects, self.bowl)
-
-    def __repr__(self):
-        return self.__str__()
