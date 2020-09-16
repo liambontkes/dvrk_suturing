@@ -188,9 +188,17 @@ def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress
     
     return PyKDL.Frame(new_orientation, new_position)
 
-for rads in np.arange(0, 3.4, 0.2):
-    insertion_pose = calculate_circular_pose(paired_pts[0], desired_pose, rads)
-    psm1.move(tf_world_to_psm1 * insertion_pose)
+# for rads in np.arange(0, 3.4, 0.2):
+#     insertion_pose = calculate_circular_pose(paired_pts[0], desired_pose, rads)
+#     psm1.move(tf_world_to_psm1 * insertion_pose)
+    
+from utils import CircularMotion
+reload(utils)
+
+cm = CircularMotion(psm1, tf_world_to_psm1, NEEDLE_RADIUS, paired_pts[0], desired_pose, 0, 3.4)
+
+while not cm.is_done():
+    cm.step()
     
 print("terminal position in rads: {}".format(rads))
 # -
@@ -263,6 +271,3 @@ psm1.dmove(PyKDL.Vector(0, 0, 0.02))
 psm1.move(tf_world_to_psm1 * pickup_pose)
 psm1.close_jaw()
 psm1.move_joint(PSM_HOME_POS)
-# -
-
-
