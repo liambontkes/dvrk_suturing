@@ -172,15 +172,14 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     
     return circle_plane_pose * PyKDL.Vector(x, y, 0)
 
-def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians):
+def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, circle_radius=NEEDLE_RADIUS):
     # this sets the desired rotation and translation to a pose around the circle with diameter 
     # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
     # x-axis is tangent to the circle
     new_orientation = deepcopy(entry_pose.M)
     new_orientation.DoRotZ(circular_progress_radians)
     
-    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, NEEDLE_RADIUS)
-    circle_radius = NEEDLE_RADIUS
+    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius)
     print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
     desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
     new_position = desired_angle_radial_vector + circle_center \
@@ -199,17 +198,23 @@ cm = CircularMotion(psm1, tf_world_to_psm1, NEEDLE_RADIUS, paired_pts[0], desire
 
 while not cm.is_done():
     cm.step()
-    
-print("terminal position in rads: {}".format(rads))
+
+
 # -
 
 psm1.open_jaw()
-psm1.dmove(PyKDL.Vector(0, 0, 0.02))
-terminal_rads = rads
+prepare_pickup_circle_pose = PyKDL.Frame(desired_pose.M, desired_pose.p 
+                                         + desired_pose.M.Inverse() * PyKDL.Vector(0, 0.01, 0))
+terminal_rads = 3.4
 pickup_rads = terminal_rads + np.pi - 0.25
 # rotate further than necessary in order to force the wrist to flip over
-opposite_pose = calculate_circular_pose(paired_pts[0], desired_pose, terminal_rads + np.pi + 0.25)
+# TODO: this movement causes erratic motion
+opposite_pose = calculate_circular_pose(paired_pts[0], prepare_pickup_circle_pose, 
+                                        terminal_rads + np.pi + 0.25, NEEDLE_RADIUS + 0.005)
 psm1.move(tf_world_to_psm1 * opposite_pose)
+
+# +
+
 # move to the actual pickup position
 opposite_pose = calculate_circular_pose(paired_pts[0], desired_pose, pickup_rads)
 psm1.move(tf_world_to_psm1 * opposite_pose)
@@ -225,7 +230,7 @@ terminal_rads = rads
 # -
 
 psm1.open_jaw()
-pickup_pose = calculate_circular_pose(paired_pts[0], desired_pose, terminal_rads - np.pi + 0.2)
+pickup_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads - np.pi + 0.2)
 psm1.dmove(PyKDL.Vector(0, 0, 0.02))
 psm1.move(tf_world_to_psm1 * pickup_pose)
 psm1.close_jaw()
@@ -266,8 +271,11 @@ terminal_rads = rads
 
 # grasp base
 psm1.open_jaw()
-pickup_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads - np.pi + 0.2)
+pickup_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads - np.pi)
 psm1.dmove(PyKDL.Vector(0, 0, 0.02))
 psm1.move(tf_world_to_psm1 * pickup_pose)
 psm1.close_jaw()
 psm1.move_joint(PSM_HOME_POS)
+# -
+
+

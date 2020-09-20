@@ -22,6 +22,8 @@ Some useful methods and constants for picking up a ball with dVRK and CoppeliaSi
 PSM_J1_TO_BASE_LINK_ROT = PyKDL.Rotation.RPY(pi / 2, - pi, 0)
 PSM_J1_TO_BASE_LINK_TF = PyKDL.Frame(PSM_J1_TO_BASE_LINK_ROT, PyKDL.Vector())
 
+PSM_HOME_JOINT_POS = np.asarray([0., 0., 0.05, 0., 0., 0.])
+
 BLUE_CIRCLE_FEAT_PATH = './blue_circle.csv'
 
 FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
@@ -102,6 +104,21 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     return circle_plane_pose * PyKDL.Vector(x, y, 0)
 
 
+def calculate_desired_entry_pose(entry_and_exit_point):
+    entry_to_exit_vector = entry_and_exit_point[1] - entry_and_exit_point[0]
+    entry_to_exit_vector.Normalize()
+    desired_z_vector = - entry_to_exit_vector * PyKDL.Vector(0, 0, 1)
+    desired_y_vector = entry_to_exit_vector
+    desired_x_vector = - desired_z_vector * desired_y_vector
+    
+    desired_rotation = \
+        PyKDL.Rotation(desired_x_vector, desired_y_vector, desired_z_vector)
+#     desired_rotation.DoRotZ(0.2)
+    
+    desired_position = entry_and_exit_point[0] + (desired_z_vector * NEEDLE_Z_OFFSET)
+    return PyKDL.Frame(desired_rotation, desired_position)
+
+
 def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians):
     # this sets the desired rotation and translation to a pose around the circle with diameter 
     # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
@@ -124,8 +141,17 @@ def vector_eps_eq(lhs, rhs):
 
 
 def set_arm_dest(arm, dest_pose):
-    if arm.get_desired_position() != dest_pose:
-        arm.move(dest_pose, blocking=False)
+    if isinstance(dest_pose, PyKDL.Frame):
+        if arm.get_desired_position() != dest_pose:
+            arm.move(dest_pose, blocking=False)
+    elif isinstance(dest_pose, PyKDL.Vector):
+        if arm.get_desired_position().p != dest_pose:
+            arm.move(dest_pose, blocking=False)
+
+
+def arm_pos_reached(arm, dest_pos):
+    return arm._arm__goal_reached and \
+        (arm.get_current_position().p - dest_pos).Norm() < 0.001 
 
 
 class CircularMotion:
@@ -156,5 +182,3 @@ class CircularMotion:
     
     def is_done(self):
        return self.done 
-
-
