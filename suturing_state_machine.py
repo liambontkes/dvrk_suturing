@@ -136,7 +136,8 @@ class SuturingStateMachine:
                                                   self.circle_pose, 
                                                   self.insertion_rads + np.pi - 0.25,
                                                   # TODO: tweak this value
-                                                  self.insertion_rads + 2 * np.pi - 0.25)
+                                                  self.insertion_rads + self.extraction_rads 
+                                                  + np.pi - 0.25)
         self.circular_motion.step()
 
 
@@ -159,7 +160,7 @@ class SuturingStateMachine:
         if self.pickup_pose is None:
             self.pickup_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                        self.circle_pose,
-                                                       self.extraction_rads - np.pi + 0.2)
+                                                       self.insertion_rads - np.pi - 1.0)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.pickup_pose)
 
     def _pickup_next(self):
@@ -194,7 +195,7 @@ class SuturingStateMachine:
         self.state_funs[self.state]()
 
 
-    def __init__(self, psm, tf_world_to_psm, paired_pts, insertion_rads=3.4, extraction_rads=3.0):
+    def __init__(self, psm, tf_world_to_psm, paired_pts, insertion_rads=3.4, extraction_rads=2.4):
         self.psm = psm
         self.tf_world_to_psm = tf_world_to_psm
         self.paired_pts = paired_pts

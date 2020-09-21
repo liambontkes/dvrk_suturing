@@ -77,11 +77,13 @@ time.sleep(1)
 tf_listener.getFrameStrings()
 
 psm1 = dvrk.psm('PSM1')
+psm2 = dvrk.psm('PSM2')
 ecm = dvrk.ecm('ECM')
 while ecm.get_current_position() == PyKDL.Frame() or ecm.get_desired_position() == PyKDL.Frame():
     time.sleep(0.5)
 
 ECM_STARTING_JOINT_POS = np.asarray([-0.15669435,  0.17855662,  0.07069676,  0.17411496])
+# ECM_STARTING_JOINT_POS = np.asarray([0.0615668 , 0.0523214 , 0.04854392, 0.15809197])
 ecm.move_joint(ECM_STARTING_JOINT_POS)
 
 PSM_HOME_POS = np.asarray([0., 0., 0.05, 0., 0., 0.])
@@ -97,10 +99,14 @@ stereo_model.fromCameraInfo(left_camera_info, right_camera_info)
 tf_cam_to_world = utils.tf_to_pykdl_frame(tf_listener.lookupTransform('simworld', 'simcamera', rospy.Time()))
 tf_world_to_psm1 = \
     utils.PSM_J1_TO_BASE_LINK_TF * utils.tf_to_pykdl_frame(tf_listener.lookupTransform('J1_PSM1', 'simworld', rospy.Time()))
+tf_world_to_psm2 = \
+    utils.PSM_J1_TO_BASE_LINK_TF * utils.tf_to_pykdl_frame(tf_listener.lookupTransform('J1_PSM2', 'simworld', rospy.Time()))
 
 objects, frame = utils.get_points_and_img(left_image_msg, right_image_msg, stereo_model, tf_cam_to_world)
 plt.figure(figsize=(12, 5))
 plt.imshow(frame)
+for o in objects:
+    o = PyKDL.Vector(o.x(), o.y(), o.z() - 0.005)
 # -
 
 objects
@@ -116,16 +122,20 @@ for pt in objects:
         (max(pt, pt2, key=lambda p: p.y()), min(pt, pt2, key=lambda p: p.y())))
 paired_pts
 
+# +
 PSM_HOME_POS = np.asarray([0., 0., 0.05, 0., 0., 0.])
 psm1.move_joint(PSM_HOME_POS)
 psm1.close_jaw()
+
+psm2.move_joint(PSM_HOME_POS)
+psm2.close_jaw()
 
 # +
 import suturing_state_machine
 reload(suturing_state_machine)
 reload(utils)
 
-sm = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts[:2])
+sm = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts)
 
 while not sm.is_done():
     sm.run_once()
@@ -133,5 +143,9 @@ while not sm.is_done():
 # -
 
 dir(psm1)
+
+ecm.get_current_joint_position()
+
+psm2.close_jaw()
 
 

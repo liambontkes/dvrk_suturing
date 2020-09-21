@@ -36,7 +36,7 @@ CIRCLE_Z_OFFSET = 0.002
 
 # the empirically determined radius of the needle (the needle diameter 
 # is slightly less than the bounding box width thanks to its shape)
-NEEDLE_RADIUS = 0.0115
+NEEDLE_RADIUS = 0.0120
 
 
 # TODO: now that the camera is right side up, maybe this can be changed
@@ -165,6 +165,7 @@ class CircularMotion:
             self.poses.append(self.world_to_psm_tf * calculate_circular_pose(points, circle_pose, rads))
         self.pose_idx = 0
         self.done = False
+        self.started = False
 
     def step(self):
         if self.done:
