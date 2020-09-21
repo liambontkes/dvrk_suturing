@@ -121,161 +121,17 @@ psm1.move_joint(PSM_HOME_POS)
 psm1.close_jaw()
 
 # +
-# calculate a desired pose
-# this is really pushing my first year linear algebra skills
-# we want the insertion to go from the min y point to the max y point
-import math
-
-NEEDLE_Z_OFFSET = -0.008
-NEEDLE_Y_OFFSET = 0.0010
-CIRCLE_Z_OFFSET = 0.002
-NEEDLE_RADIUS = 0.0115
-
-
-# the desired rotation is calculated by setting the entry-to-exit vector of the suture as the x-axis vector,
-# setting x-axis cross (0, 0, 1) as the z-axis vector, and setting the y-axis vector to the x-axis cross z-axis.
-def calculate_desired_entry_pose(entry_and_exit_point):
-    entry_to_exit_vector = entry_and_exit_point[1] - entry_and_exit_point[0]
-    entry_to_exit_vector.Normalize()
-    desired_z_vector = - entry_to_exit_vector * PyKDL.Vector(0, 0, 1)
-    desired_y_vector = entry_to_exit_vector
-    desired_x_vector = - desired_z_vector * desired_y_vector
-    
-    desired_rotation = \
-        PyKDL.Rotation(desired_x_vector, desired_y_vector, desired_z_vector)
-#     desired_rotation.DoRotZ(0.2)
-    
-    desired_position = entry_and_exit_point[0] + (desired_z_vector * NEEDLE_Z_OFFSET)
-    return PyKDL.Frame(desired_rotation, desired_position)
-   
-desired_pose = calculate_desired_entry_pose(paired_pts[0])
-psm1.move(tf_world_to_psm1 * desired_pose)
-
-
-# +
-def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
-    # taken from http://mathforum.org/library/drmath/view/53027.html
-    # because the circle plane pose has the z-axis perpendicular to the desired circle,
-    # we can zero out the z-axis component of our dots 
-    p1 = circle_plane_pose.Inverse() * points[0]
-    p1 = PyKDL.Vector(p1.x(), p1.y(), 0)
-    p2 = circle_plane_pose.Inverse() * points[1]
-    p2 = PyKDL.Vector(p2.x(), p2.y(), 0)
-    
-    q = (p2 - p1).Norm()
-    mean_x = np.mean([p1.x(), p2.x()])
-    mean_y = np.mean([p1.y(), p2.y()])
-    
-    # EXTREMELY BRITTLE, dependent on order that `points` are in
-    x = mean_x - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
-    y = mean_y - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
-    
-    return circle_plane_pose * PyKDL.Vector(x, y, 0)
-
-def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, circle_radius=NEEDLE_RADIUS):
-    # this sets the desired rotation and translation to a pose around the circle with diameter 
-    # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
-    # x-axis is tangent to the circle
-    new_orientation = deepcopy(entry_pose.M)
-    new_orientation.DoRotZ(circular_progress_radians)
-    
-    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius)
-    print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
-    desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
-    new_position = desired_angle_radial_vector + circle_center \
-                   + (new_orientation.UnitY() * NEEDLE_Y_OFFSET)
-    
-    return PyKDL.Frame(new_orientation, new_position)
-
-# for rads in np.arange(0, 3.4, 0.2):
-#     insertion_pose = calculate_circular_pose(paired_pts[0], desired_pose, rads)
-#     psm1.move(tf_world_to_psm1 * insertion_pose)
-    
-from utils import CircularMotion
+import suturing_state_machine
+reload(suturing_state_machine)
 reload(utils)
 
-cm = CircularMotion(psm1, tf_world_to_psm1, NEEDLE_RADIUS, paired_pts[0], desired_pose, 0, 3.4)
+sm = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts[:2])
 
-while not cm.is_done():
-    cm.step()
-
-
+while not sm.is_done():
+    sm.run_once()
+    time.sleep(0.1)
 # -
 
-psm1.open_jaw()
-prepare_pickup_circle_pose = PyKDL.Frame(desired_pose.M, desired_pose.p 
-                                         + desired_pose.M.Inverse() * PyKDL.Vector(0, 0.01, 0))
-terminal_rads = 3.4
-pickup_rads = terminal_rads + np.pi - 0.25
-# rotate further than necessary in order to force the wrist to flip over
-# TODO: this movement causes erratic motion
-opposite_pose = calculate_circular_pose(paired_pts[0], prepare_pickup_circle_pose, 
-                                        terminal_rads + np.pi + 0.25, NEEDLE_RADIUS + 0.005)
-psm1.move(tf_world_to_psm1 * opposite_pose)
-
-# +
-
-# move to the actual pickup position
-opposite_pose = calculate_circular_pose(paired_pts[0], desired_pose, pickup_rads)
-psm1.move(tf_world_to_psm1 * opposite_pose)
-psm1.close_jaw()
-
-# +
-# use calculate_circular_pose to do the extraction
-for rads in np.arange(pickup_rads, pickup_rads + 3.0, 0.2):
-    opposite_pose = calculate_circular_pose(paired_pts[0], desired_pose, rads)
-    psm1.move(tf_world_to_psm1 * opposite_pose)
-    
-terminal_rads = rads
-# -
-
-psm1.open_jaw()
-pickup_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads - np.pi + 0.2)
-psm1.dmove(PyKDL.Vector(0, 0, 0.02))
-psm1.move(tf_world_to_psm1 * pickup_pose)
-psm1.close_jaw()
-psm1.move_joint(PSM_HOME_POS)
-
-# +
-# setup for insertion
-desired_pose = calculate_desired_entry_pose(paired_pts[1])
-psm1.move(tf_world_to_psm1 * desired_pose)
-
-
-# insertion
-for rads in np.arange(0, 3.4, 0.2):
-    insertion_pose = calculate_circular_pose(paired_pts[1], desired_pose, rads)
-    psm1.move(tf_world_to_psm1 * insertion_pose)
-    
-print("terminal position in rads: {}".format(rads))
-
-# setup and grasp needle for extraction
-psm1.open_jaw()
-psm1.dmove(PyKDL.Vector(0, 0, 0.02))
-terminal_rads = rads
-pickup_rads = terminal_rads + np.pi - 0.25
-# rotate further than necessary in order to force the wrist to flip over
-opposite_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads + np.pi + 0.25)
-psm1.move(tf_world_to_psm1 * opposite_pose)
-# move to the actual pickup position
-opposite_pose = calculate_circular_pose(paired_pts[1], desired_pose, pickup_rads)
-psm1.move(tf_world_to_psm1 * opposite_pose)
-psm1.close_jaw()
-
-# extraction
-for rads in np.arange(pickup_rads, pickup_rads + 3.0, 0.2):
-    opposite_pose = calculate_circular_pose(paired_pts[1], desired_pose, rads)
-    psm1.move(tf_world_to_psm1 * opposite_pose)
-    
-terminal_rads = rads
-
-# grasp base
-psm1.open_jaw()
-pickup_pose = calculate_circular_pose(paired_pts[1], desired_pose, terminal_rads - np.pi)
-psm1.dmove(PyKDL.Vector(0, 0, 0.02))
-psm1.move(tf_world_to_psm1 * pickup_pose)
-psm1.close_jaw()
-psm1.move_joint(PSM_HOME_POS)
-# -
+dir(psm1)
 
 

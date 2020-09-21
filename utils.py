@@ -119,15 +119,15 @@ def calculate_desired_entry_pose(entry_and_exit_point):
     return PyKDL.Frame(desired_rotation, desired_position)
 
 
-def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians):
+def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, 
+                            circle_radius=NEEDLE_RADIUS):
     # this sets the desired rotation and translation to a pose around the circle with diameter 
     # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
     # x-axis is tangent to the circle
     new_orientation = deepcopy(entry_pose.M)
     new_orientation.DoRotZ(circular_progress_radians)
     
-    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, NEEDLE_RADIUS)
-    circle_radius = NEEDLE_RADIUS
+    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius)
     print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
     desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
     new_position = desired_angle_radial_vector + circle_center \
@@ -150,8 +150,9 @@ def set_arm_dest(arm, dest_pose):
 
 
 def arm_pos_reached(arm, dest_pos):
+    rospy.loginfo("Distance from arm to dest: {}".format((arm.get_current_position().p - dest_pos).Norm()))
     return arm._arm__goal_reached and \
-        (arm.get_current_position().p - dest_pos).Norm() < 0.001 
+        (arm.get_current_position().p - dest_pos).Norm() < 0.005
 
 
 class CircularMotion:
@@ -177,7 +178,7 @@ class CircularMotion:
                 self.done = True
 
         set_arm_dest(self.psm, self.poses[self.pose_idx])
-        rospy.loginfo("Moving to pose {} out of {}".format(self.pose_idx, len(self.poses)))
+        rospy.loginfo("Moving to pose {} out of {}".format(self.pose_idx + 1, len(self.poses)))
 
     
     def is_done(self):
