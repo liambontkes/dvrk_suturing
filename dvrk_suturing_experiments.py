@@ -81,13 +81,21 @@ psm2 = dvrk.psm('PSM2')
 ecm = dvrk.ecm('ECM')
 while ecm.get_current_position() == PyKDL.Frame() or ecm.get_desired_position() == PyKDL.Frame():
     time.sleep(0.5)
+while psm1.get_current_position() == PyKDL.Frame() or psm1.get_desired_position() == PyKDL.Frame():
+    time.sleep(0.5)
 
 ECM_STARTING_JOINT_POS = np.asarray([-0.15669435,  0.17855662,  0.07069676,  0.17411496])
 # ECM_STARTING_JOINT_POS = np.asarray([0.0615668 , 0.0523214 , 0.04854392, 0.15809197])
-ecm.move_joint(ECM_STARTING_JOINT_POS)
+# ecm.move_joint(ECM_STARTING_JOINT_POS)
 
+# +
+time.sleep(1)
 PSM_HOME_POS = np.asarray([0., 0., 0.05, 0., 0., 0.])
 psm1.move_joint(PSM_HOME_POS)
+psm1.close_jaw()
+
+psm2.move_joint(PSM_HOME_POS)
+psm2.close_jaw()
 
 # +
 import image_geometry
@@ -123,22 +131,16 @@ for pt in objects:
 paired_pts
 
 # +
-PSM_HOME_POS = np.asarray([0., 0., 0.05, 0., 0., 0.])
-psm1.move_joint(PSM_HOME_POS)
-psm1.close_jaw()
-
-psm2.move_joint(PSM_HOME_POS)
-psm2.close_jaw()
-
-# +
 import suturing_state_machine
 reload(suturing_state_machine)
 reload(utils)
 
-sm = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts)
+sm1 = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts[:2])  
+sm2 = suturing_state_machine.SuturingStateMachine(psm2, tf_world_to_psm2, paired_pts[2:])
 
-while not sm.is_done():
-    sm.run_once()
+while not sm1.is_done() or not sm2.is_done():
+    sm1.run_once()
+    sm2.run_once()
     time.sleep(0.1)
 # -
 

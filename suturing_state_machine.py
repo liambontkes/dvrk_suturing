@@ -137,7 +137,7 @@ class SuturingStateMachine:
                                                   self.insertion_rads + np.pi - 0.25,
                                                   # TODO: tweak this value
                                                   self.insertion_rads + self.extraction_rads 
-                                                  + np.pi - 0.25)
+                                                  + np.pi - 0.3)
         self.circular_motion.step()
 
 
