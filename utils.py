@@ -29,9 +29,13 @@ BLUE_CIRCLE_FEAT_PATH = './blue_circle.csv'
 FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
 
 # The empirically determined needle Z- and Y- offsets from the gripper frame
+# see calculate_desired_entry_pose for how to calculate the pose that these shifts are 
+# relative to
 NEEDLE_Z_OFFSET = -0.008
 NEEDLE_Y_OFFSET = 0.0010
 # The Z offset of the plane on which the suture throw circle lies
+# this is basically the (empirically determined) distance between the gripper frame and 
+# the needle
 CIRCLE_Z_OFFSET = 0.002
 
 # the empirically determined radius of the needle (the needle diameter 
@@ -101,14 +105,19 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     x = mean_x - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
     y = mean_y - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
     
+    # this should return the circle whose center is above the line segment between
+    # the two points but i have no idea why
     return circle_plane_pose * PyKDL.Vector(x, y, 0)
 
 
 def calculate_desired_entry_pose(entry_and_exit_point):
     entry_to_exit_vector = entry_and_exit_point[1] - entry_and_exit_point[0]
     entry_to_exit_vector.Normalize()
+    # the z-axis vector points TOWARD the robot
     desired_z_vector = - entry_to_exit_vector * PyKDL.Vector(0, 0, 1)
+    # the y-axis vector vector points right-to-left from the camera perspective, along the suture throw
     desired_y_vector = entry_to_exit_vector
+    # this is cross product of z and y that points "up"
     desired_x_vector = - desired_z_vector * desired_y_vector
     
     desired_rotation = \
@@ -156,6 +165,7 @@ def arm_pos_reached(arm, dest_pos):
 
 
 class CircularMotion:
+    # an abstraction that lets us 'tick' a circular trajectory
     def __init__(self, psm, world_to_psm_tf, circle_radius, points, circle_pose, 
                  start_rads, end_rads, step_rads=0.2):
         self.psm = psm

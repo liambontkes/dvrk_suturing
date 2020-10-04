@@ -84,9 +84,10 @@ while ecm.get_current_position() == PyKDL.Frame() or ecm.get_desired_position() 
 while psm1.get_current_position() == PyKDL.Frame() or psm1.get_desired_position() == PyKDL.Frame():
     time.sleep(0.5)
 
-ECM_STARTING_JOINT_POS = np.asarray([-0.15669435,  0.17855662,  0.07069676,  0.17411496])
+# ECM_STARTING_JOINT_POS = np.asarray([-0.15669435,  0.17855662,  0.07069676,  0.17411496])
 # ECM_STARTING_JOINT_POS = np.asarray([0.0615668 , 0.0523214 , 0.04854392, 0.15809197])
-# ecm.move_joint(ECM_STARTING_JOINT_POS)
+ECM_STARTING_JOINT_POS = np.asarray([-0.14478268, -0.1293848 ,  0.00261061,  0.043541  ])
+ecm.move_joint(ECM_STARTING_JOINT_POS)
 
 # +
 time.sleep(1)
@@ -117,12 +118,13 @@ for o in objects:
     o = PyKDL.Vector(o.x(), o.y(), o.z() - 0.005)
 # -
 
-objects
+len(objects)
 
 # pair up points that are across from each other
 # x is *more or less* the axis along the wound
 paired_pts = []
-for pt in objects:
+while objects:
+    pt = objects[0]
     objects.remove(pt)
     pt2 = min(objects, key=lambda obj : abs(obj.x() - pt.x()))
     objects.remove(pt2)
@@ -135,8 +137,8 @@ import suturing_state_machine
 reload(suturing_state_machine)
 reload(utils)
 
-sm1 = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts[:2])  
-sm2 = suturing_state_machine.SuturingStateMachine(psm2, tf_world_to_psm2, paired_pts[2:])
+sm1 = suturing_state_machine.SuturingStateMachine(psm1, tf_world_to_psm1, paired_pts[3:])  
+sm2 = suturing_state_machine.SuturingStateMachine(psm2, tf_world_to_psm2, paired_pts[:3])
 
 while not sm1.is_done() or not sm2.is_done():
     sm1.run_once()

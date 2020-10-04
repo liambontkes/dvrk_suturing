@@ -2,17 +2,30 @@ from utils import *
 from enum import Enum
 
 class SuturingState(Enum):
+    # go to the designated home position
     HOME = 0
+    # line up to the pose before insertion, calculated by `calculate_desired_entry_pose`
     PREPARE_INSERTION = 1
+    # execute a semicircular trajectory to insert the needle
     INSERTION = 2
+    # release the needle
     RELEASE_NEEDLE = 3
+    # rotate along the circle representing the entire suture throw, further than necessary
+    # to pick up the needle, to force the wrist to 'flip'
     OVERROTATE = 4
+    # line up to the tip of the needle
     PREPARE_EXTRACTION = 5
+    # grasp the needle
     GRASP_NEEDLE = 6
+    # execute a semicircular trajectory to extract the needle
     EXTRACTION = 7
+    # release the needle again
     RELEASE_NEEDLE_2 = 8
+    # pick up the needle
     PICKUP = 9
+    # grasp needle again
     GRASP_NEEDLE_2 = 10
+    # no more suture throws to execute
     DONE = 11
 
 
@@ -186,11 +199,13 @@ class SuturingStateMachine:
 
 
     def run_once(self):
+        if self.state == SuturingState.DONE:
+            return
+
         self.state = self.next_funs[self.state]()
 
         if self.state == SuturingState.DONE:
             return
-
         rospy.loginfo("Executing state {}".format(self.state))
         self.state_funs[self.state]()
 
