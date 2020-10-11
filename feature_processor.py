@@ -3,7 +3,7 @@ import rospy
 import rospkg
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from auto_cam.msg import FeaturePoints
+# from auto_cam.msg import FeaturePoints
 from opencv_apps.msg import Point2D
 from enum import Enum
 import cv2
@@ -154,5 +154,8 @@ class feature_processor:
 
                 # Creates a circle at the centroid point
                 cv2.circle(frame, (cx, cy), 3, (0, 0, 0), -1)
+#                print("features pos:", features.pos[0],features.pos[2])
+        
+        sorted(features,key=lambda p: p.pos[0])
 
         return features, frame

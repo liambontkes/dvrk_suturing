@@ -2,14 +2,15 @@
 
 <arg name="ecm_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
 <arg name="psm1_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
+<arg name="dvrk_console_config" default="/home/parallels/suturing_ws/src/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
   
 <node name="dvrk_node"
       pkg="dvrk_robot"
       type="dvrk_console_json"        
-      args="-j $(find saw_intuitive_research_kit)/../share/console-full-cart-simulated.json"                     
+      args="-j $(arg dvrk_console_config)"                     
       output="screen"/>
 
-<group ns="/dvrk/PSM1">
+<!-- <group ns="/dvrk/PSM1">
   <arg name="model" default="$(find dvrk_model)/model/PSM1.urdf.xacro" />
   <arg name="gui" default="true" />
   <arg name="rate" default="200" />
@@ -68,7 +69,7 @@
             to="/dvrk_ecm/joint_state_publisher/enable_slider"/>
   </node>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-</group>
+</group> -->
 
 <!-- This launches a static transform between the ECM and the camera frame in simulation -->
 <node pkg="tf" type="static_transform_publisher" name="ECM" args="0 0 0 4.71239 0 0 ecm_roll_link camera 20" />

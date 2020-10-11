@@ -32,7 +32,12 @@ FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
 # see calculate_desired_entry_pose for how to calculate the pose that these shifts are 
 # relative to
 NEEDLE_Z_OFFSET = -0.008
-NEEDLE_Y_OFFSET = 0.0010
+# NEEDLE_Z_OFFSET = -0.01
+NEEDLE_Y_OFFSET = 0.001
+# NEEDLE_Z_OFFSET = 0
+# NEEDLE_Y_OFFSET = 0
+
+
 # The Z offset of the plane on which the suture throw circle lies
 # this is basically the (empirically determined) distance between the gripper frame and 
 # the needle
@@ -41,7 +46,7 @@ CIRCLE_Z_OFFSET = 0.002
 # the empirically determined radius of the needle (the needle diameter 
 # is slightly less than the bounding box width thanks to its shape)
 NEEDLE_RADIUS = 0.0120
-
+# NEEDLE_RADIUS = 0.0117
 
 # TODO: now that the camera is right side up, maybe this can be changed
 CV_TO_CAM_FRAME_ROT = np.asarray([
@@ -96,6 +101,15 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     p1 = PyKDL.Vector(p1.x(), p1.y(), 0)
     p2 = circle_plane_pose.Inverse() * points[1]
     p2 = PyKDL.Vector(p2.x(), p2.y(), 0)
+
+    # p2 = circle_plane_pose.Inverse() * points[0]
+    # p2 = PyKDL.Vector(p2.x(), p2.y(), 0)
+    # p1 = circle_plane_pose.Inverse() * points[1]
+    # p1 = PyKDL.Vector(p1.x(), p1.y(), 0)
+
+    # p1 = PyKDL.Vector(points[0][0], points[0][1], 0)
+    # p2 = PyKDL.Vector(points[1][0], points[1][1], 0)
+
     
     q = (p2 - p1).Norm()
     mean_x = np.mean([p1.x(), p2.x()])
@@ -108,6 +122,7 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     # this should return the circle whose center is above the line segment between
     # the two points but i have no idea why
     return circle_plane_pose * PyKDL.Vector(x, y, 0)
+#     return PyKDL.Vector(x, y, 0)
 
 
 def calculate_desired_entry_pose(entry_and_exit_point):
@@ -167,7 +182,7 @@ def arm_pos_reached(arm, dest_pos):
 class CircularMotion:
     # an abstraction that lets us 'tick' a circular trajectory
     def __init__(self, psm, world_to_psm_tf, circle_radius, points, circle_pose, 
-                 start_rads, end_rads, step_rads=0.2):
+                 start_rads, end_rads, step_rads=0.1):
         self.psm = psm
         self.world_to_psm_tf = world_to_psm_tf
         self.poses = []
