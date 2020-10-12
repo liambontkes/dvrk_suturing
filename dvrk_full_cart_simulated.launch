@@ -3,12 +3,17 @@
 <arg name="ecm_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
 <arg name="psm1_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
 <arg name="dvrk_console_config" default="/home/parallels/suturing_ws/src/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
+
+<node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM1" args="0 0 0 0 0 0 PSM1_RCM PSM1_base 20" />
+<node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM2" args="0 0 0 0 0 0 PSM2_RCM PSM2_base 20" />
+<node pkg="tf" type="static_transform_publisher" name="sim_2_ros_ECM" args="0 0 0 0  0 0 ECM_RCM ECM_base 20" />
   
 <node name="dvrk_node"
       pkg="dvrk_robot"
       type="dvrk_console_json"        
       args="-j $(arg dvrk_console_config)"                     
       output="screen"/>
+
 
 <!-- <group ns="/dvrk/PSM1">
   <arg name="model" default="$(find dvrk_model)/model/PSM1.urdf.xacro" />
@@ -72,7 +77,7 @@
 </group> -->
 
 <!-- This launches a static transform between the ECM and the camera frame in simulation -->
-<node pkg="tf" type="static_transform_publisher" name="ECM" args="0 0 0 4.71239 0 0 ecm_roll_link camera 20" />
+<!-- <node pkg="tf" type="static_transform_publisher" name="ECM" args="0 0 0 4.71239 0 0 ecm_roll_link camera 20" /> -->
 <node pkg="simulation" name="image_flipper" type="image_flipper.py" />
 </launch>
 

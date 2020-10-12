@@ -55,7 +55,7 @@ class SuturingStateMachine:
 
     def _prepare_insertion_state(self):
         if self.circle_pose is None:
-            self.circle_pose = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx])
+            self.circle_pose = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx], self.arm_name)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.circle_pose)
 
 
@@ -70,7 +70,7 @@ class SuturingStateMachine:
         if self.circular_motion is None:
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
-                                                  self.circle_pose, 0, self.insertion_rads)
+                                                  self.circle_pose, 0, self.insertion_rads,self.arm_name)
         self.circular_motion.step()
 
     
@@ -89,7 +89,8 @@ class SuturingStateMachine:
     
     def _release_needle_next(self):
         if self.jaw_fully_open():
-            return SuturingState.OVERROTATE
+            # return SuturingState.OVERROTATE
+            return SuturingState.PREPARE_EXTRACTION
         else:
             return SuturingState.RELEASE_NEEDLE
 
@@ -99,10 +100,13 @@ class SuturingStateMachine:
         # extracting the needle
         overrotation_circle_pose = PyKDL.Frame(self.circle_pose.M, self.circle_pose.p 
                                              + self.circle_pose.M.Inverse() * PyKDL.Vector(0, 0.015, 0))
+        offset = -0.25
+        if self.arm_name == 'PSM2':
+            offset = 0.25
         self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx],
-                                                         overrotation_circle_pose,
-                                                         self.insertion_rads + np.pi + 0.25, 
-                                                         NEEDLE_RADIUS + 0.005)
+                                                         self.circle_pose,
+                                                         self.insertion_rads + np.pi + offset, 
+                                                         NEEDLE_RADIUS)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.overrotation_pose)
 
 
@@ -115,9 +119,12 @@ class SuturingStateMachine:
 
     
     def _prepare_extraction_state(self):
-        pickup_rads = self.insertion_rads + np.pi - 0.25
+        offset = 0.25
+        if self.arm_name == 'PSM2':
+            offset = -0.25
+        pickup_rads = self.insertion_rads + np.pi + offset
         opposite_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
-                                                self.circle_pose, pickup_rads)
+                                                self.circle_pose, pickup_rads,self.arm_name)
         self.prepare_extraction_pose = opposite_pose
         set_arm_dest(self.psm, self.tf_world_to_psm * self.prepare_extraction_pose)
             
@@ -132,7 +139,7 @@ class SuturingStateMachine:
 
     def _grasp_needle_state(self):
         if self.psm.get_desired_jaw_position() >= 0.:
-            self.psm.close_jaw(blocking=False)
+            self.psm.close_jaw(blocking=True)
 
     
     def _grasp_needle_next(self):
@@ -144,13 +151,18 @@ class SuturingStateMachine:
 
     def _extraction_state(self):
         if self.circular_motion is None:
+            offset = -0.25
+            offset2 = 0.15
+            if self.arm_name == 'PSM2':
+                offset = -0.25
+                offset2 = 0.15
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
-                                                  self.insertion_rads + np.pi - 0.25,
+                                                  self.insertion_rads + np.pi + offset,
                                                   # TODO: tweak this value
                                                   self.insertion_rads + self.extraction_rads 
-                                                  + np.pi - 0.3)
+                                                  + np.pi + offset2,self.arm_name)
         self.circular_motion.step()
 
 
@@ -171,9 +183,12 @@ class SuturingStateMachine:
 
     def _pickup_state(self):
         if self.pickup_pose is None:
+            offset = -0.2
+            if self.arm_name =='PSM2':
+                offset = -0.2
             self.pickup_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                        self.circle_pose,
-                                                       self.insertion_rads - np.pi - 1.0)
+                                                       self.insertion_rads + self.extraction_rads +offset,self.arm_name)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.pickup_pose)
 
     def _pickup_next(self):
@@ -210,7 +225,7 @@ class SuturingStateMachine:
         self.state_funs[self.state]()
 
 
-    def __init__(self, psm, tf_world_to_psm, paired_pts, insertion_rads=3.4, extraction_rads=2.4):
+    def __init__(self, psm, tf_world_to_psm, paired_pts, insertion_rads=3.4, extraction_rads=2.4, arm_name = 'PSM1'):
         self.psm = psm
         self.tf_world_to_psm = tf_world_to_psm
         self.paired_pts = paired_pts
@@ -225,6 +240,7 @@ class SuturingStateMachine:
         self.overrotation_pose = None
         self.prepare_extraction_pose = None
         self.pickup_pose = None
+        self.arm_name = arm_name
 
         self.state_funs = {
             SuturingState.HOME : self._home_state,
@@ -253,4 +269,3 @@ class SuturingStateMachine:
             SuturingState.PICKUP : self._pickup_next,
             SuturingState.GRASP_NEEDLE_2 : self._grasp_needle_2_next
         }
-        

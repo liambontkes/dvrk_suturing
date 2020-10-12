@@ -18,14 +18,6 @@
         }
         ,
         {
-            "name": "PSM3",
-            "type": "PSM",
-            "simulation": "KINEMATIC",
-            "pid": "sawControllersPID-PSM.xml",
-            "kinematic": "psm-large-needle-driver.json"
-        }
-        ,
-        {
             "name": "ECM",
             "type": "ECM",
             "simulation": "KINEMATIC",

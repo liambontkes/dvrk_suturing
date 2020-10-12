@@ -32,21 +32,16 @@ FEAT_PATHS = [BLUE_CIRCLE_FEAT_PATH]
 # see calculate_desired_entry_pose for how to calculate the pose that these shifts are 
 # relative to
 NEEDLE_Z_OFFSET = -0.008
-# NEEDLE_Z_OFFSET = -0.01
-NEEDLE_Y_OFFSET = 0.001
-# NEEDLE_Z_OFFSET = 0
-# NEEDLE_Y_OFFSET = 0
-
-
+NEEDLE_Y_OFFSET = 0
 # The Z offset of the plane on which the suture throw circle lies
 # this is basically the (empirically determined) distance between the gripper frame and 
 # the needle
-CIRCLE_Z_OFFSET = 0.002
+# CIRCLE_Z_OFFSET = 0.002
 
 # the empirically determined radius of the needle (the needle diameter 
 # is slightly less than the bounding box width thanks to its shape)
-NEEDLE_RADIUS = 0.0120
-# NEEDLE_RADIUS = 0.0117
+NEEDLE_RADIUS = 0.0117
+
 
 # TODO: now that the camera is right side up, maybe this can be changed
 CV_TO_CAM_FRAME_ROT = np.asarray([
@@ -93,7 +88,7 @@ def tf_to_pykdl_frame(tfl_frame):
     rot = PyKDL.Rotation.Quaternion(*rot_quat)
     return PyKDL.Frame(rot, pos2)
 
-def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
+def fit_circle_to_points_and_radius(circle_plane_pose, points, radius, arm_name):
     # taken from http://mathforum.org/library/drmath/view/53027.html
     # because the circle plane pose has the z-axis perpendicular to the desired circle,
     # we can zero out the z-axis component of our dots 
@@ -101,39 +96,34 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius):
     p1 = PyKDL.Vector(p1.x(), p1.y(), 0)
     p2 = circle_plane_pose.Inverse() * points[1]
     p2 = PyKDL.Vector(p2.x(), p2.y(), 0)
-
-    # p2 = circle_plane_pose.Inverse() * points[0]
-    # p2 = PyKDL.Vector(p2.x(), p2.y(), 0)
-    # p1 = circle_plane_pose.Inverse() * points[1]
-    # p1 = PyKDL.Vector(p1.x(), p1.y(), 0)
-
-    # p1 = PyKDL.Vector(points[0][0], points[0][1], 0)
-    # p2 = PyKDL.Vector(points[1][0], points[1][1], 0)
-
     
     q = (p2 - p1).Norm()
     mean_x = np.mean([p1.x(), p2.x()])
     mean_y = np.mean([p1.y(), p2.y()])
     
     # EXTREMELY BRITTLE, dependent on order that `points` are in
-    x = mean_x - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
-    y = mean_y - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
+    x = mean_x + (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
+    y = mean_y + (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
+    if arm_name == 'PSM2':
+        x = mean_x - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
+        y = mean_y - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
     
     # this should return the circle whose center is above the line segment between
     # the two points but i have no idea why
     return circle_plane_pose * PyKDL.Vector(x, y, 0)
-#     return PyKDL.Vector(x, y, 0)
 
 
-def calculate_desired_entry_pose(entry_and_exit_point):
+def calculate_desired_entry_pose(entry_and_exit_point, arm_name):
     entry_to_exit_vector = entry_and_exit_point[1] - entry_and_exit_point[0]
     entry_to_exit_vector.Normalize()
     # the z-axis vector points TOWARD the robot
-    desired_z_vector = - entry_to_exit_vector * PyKDL.Vector(0, 0, 1)
+    desired_x_vector =  -PyKDL.Vector(0, 0, 1)
+    if arm_name == 'PSM2':
+        desired_x_vector = PyKDL.Vector(0, 0, 1)
     # the y-axis vector vector points right-to-left from the camera perspective, along the suture throw
     desired_y_vector = entry_to_exit_vector
     # this is cross product of z and y that points "up"
-    desired_x_vector = - desired_z_vector * desired_y_vector
+    desired_z_vector = cross(desired_x_vector,desired_y_vector)
     
     desired_rotation = \
         PyKDL.Rotation(desired_x_vector, desired_y_vector, desired_z_vector)
@@ -142,16 +132,26 @@ def calculate_desired_entry_pose(entry_and_exit_point):
     desired_position = entry_and_exit_point[0] + (desired_z_vector * NEEDLE_Z_OFFSET)
     return PyKDL.Frame(desired_rotation, desired_position)
 
+def cross(a, b):
 
-def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, 
-                            circle_radius=NEEDLE_RADIUS):
+    c = PyKDL.Vector(a[1]*b[2] - a[2]*b[1],
+         a[2]*b[0] - a[0]*b[2],
+         a[0]*b[1] - a[1]*b[0])
+
+    return c
+
+def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, arm_name,
+                            circle_radius=NEEDLE_RADIUS, ):
     # this sets the desired rotation and translation to a pose around the circle with diameter 
     # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
     # x-axis is tangent to the circle
     new_orientation = deepcopy(entry_pose.M)
-    new_orientation.DoRotZ(circular_progress_radians)
+    if arm_name == 'PSM2':
+        new_orientation.DoRotZ(circular_progress_radians)
+    else:
+        new_orientation.DoRotZ(-circular_progress_radians)
     
-    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius)
+    circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius,arm_name)
     print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
     desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
     new_position = desired_angle_radial_vector + circle_center \
@@ -176,18 +176,18 @@ def set_arm_dest(arm, dest_pose):
 def arm_pos_reached(arm, dest_pos):
     rospy.loginfo("Distance from arm to dest: {}".format((arm.get_current_position().p - dest_pos).Norm()))
     return arm._arm__goal_reached and \
-        (arm.get_current_position().p - dest_pos).Norm() < 0.005
+        (arm.get_current_position().p - dest_pos).Norm() < 0.001
 
 
 class CircularMotion:
     # an abstraction that lets us 'tick' a circular trajectory
     def __init__(self, psm, world_to_psm_tf, circle_radius, points, circle_pose, 
-                 start_rads, end_rads, step_rads=0.1):
+                 start_rads, end_rads, arm_name,step_rads=0.1):
         self.psm = psm
         self.world_to_psm_tf = world_to_psm_tf
         self.poses = []
         for rads in np.arange(start_rads, end_rads, step_rads):
-            self.poses.append(self.world_to_psm_tf * calculate_circular_pose(points, circle_pose, rads))
+            self.poses.append(self.world_to_psm_tf * calculate_circular_pose(points, circle_pose, rads,arm_name))
         self.pose_idx = 0
         self.done = False
         self.started = False
