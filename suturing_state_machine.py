@@ -100,13 +100,15 @@ class SuturingStateMachine:
         # extracting the needle
         overrotation_circle_pose = PyKDL.Frame(self.circle_pose.M, self.circle_pose.p 
                                              + self.circle_pose.M.Inverse() * PyKDL.Vector(0, 0.015, 0))
-        offset = -0.25
+        try_this = False
+        offset = 0.25
         if self.arm_name == 'PSM2':
-            offset = 0.25
+            offset = -0.55
+            try_this = False
         self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx],
                                                          self.circle_pose,
                                                          self.insertion_rads + np.pi + offset, 
-                                                         NEEDLE_RADIUS)
+                                                         NEEDLE_RADIUS,try_this=try_this)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.overrotation_pose)
 
 
@@ -119,9 +121,9 @@ class SuturingStateMachine:
 
     
     def _prepare_extraction_state(self):
-        offset = 0.25
+        offset = -0.45
         if self.arm_name == 'PSM2':
-            offset = -0.25
+            offset = -0.55
         pickup_rads = self.insertion_rads + np.pi + offset
         opposite_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                 self.circle_pose, pickup_rads,self.arm_name)
@@ -151,11 +153,11 @@ class SuturingStateMachine:
 
     def _extraction_state(self):
         if self.circular_motion is None:
-            offset = -0.25
-            offset2 = 0.15
+            offset = -0.55
+            offset2 = 0
             if self.arm_name == 'PSM2':
-                offset = -0.25
-                offset2 = 0.15
+                offset = -0.55
+                offset2 = 0
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
@@ -221,7 +223,7 @@ class SuturingStateMachine:
 
         if self.state == SuturingState.DONE:
             return
-        rospy.loginfo("Executing state {}".format(self.state))
+        # rospy.loginfo("Executing state {}".format(self.state))
         self.state_funs[self.state]()
 
 

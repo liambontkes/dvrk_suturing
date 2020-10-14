@@ -75,9 +75,9 @@ def get_points_and_img(left_image_msg, right_image_msg, stereo_cam_model, cam_to
         disparity = abs(left_feat.pos[0] - right_feat.pos[0])
         pos_cv = stereo_cam_model.projectPixelTo3d(left_feat.pos, float(disparity))
         pos_cam = np.matmul(CV_TO_CAM_FRAME_ROT, pos_cv)
-        print(pos_cam)
+        # print(pos_cam)
         pos = PyKDL.Vector(*pos_cam)
-        print(pos)
+        # print(pos)
         objects.append(cam_to_world_tf * pos)
     return objects, np.hstack((left_frame, right_frame))
 
@@ -141,18 +141,20 @@ def cross(a, b):
     return c
 
 def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress_radians, arm_name,
-                            circle_radius=NEEDLE_RADIUS, ):
+                            circle_radius=NEEDLE_RADIUS,try_this=False):
     # this sets the desired rotation and translation to a pose around the circle with diameter 
     # consisting of entry_and_exit_points and rotation CW about the z-axis of entry_pose such that the
     # x-axis is tangent to the circle
     new_orientation = deepcopy(entry_pose.M)
     if arm_name == 'PSM2':
         new_orientation.DoRotZ(circular_progress_radians)
+    elif try_this:
+        new_orientation.DoRotZ(-circular_progress_radians)
     else:
         new_orientation.DoRotZ(-circular_progress_radians)
     
     circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius,arm_name)
-    print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
+    # print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
     desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
     new_position = desired_angle_radial_vector + circle_center \
                    + (new_orientation.UnitY() * NEEDLE_Y_OFFSET)
@@ -174,7 +176,7 @@ def set_arm_dest(arm, dest_pose):
 
 
 def arm_pos_reached(arm, dest_pos):
-    rospy.loginfo("Distance from arm to dest: {}".format((arm.get_current_position().p - dest_pos).Norm()))
+    # rospy.loginfo("Distance from arm to dest: {}".format((arm.get_current_position().p - dest_pos).Norm()))
     return arm._arm__goal_reached and \
         (arm.get_current_position().p - dest_pos).Norm() < 0.001
 
@@ -204,7 +206,7 @@ class CircularMotion:
                 self.done = True
 
         set_arm_dest(self.psm, self.poses[self.pose_idx])
-        rospy.loginfo("Moving to pose {} out of {}".format(self.pose_idx + 1, len(self.poses)))
+        # rospy.loginfo("Moving to pose {} out of {}".format(self.pose_idx + 1, len(self.poses)))
 
     
     def is_done(self):
