@@ -154,10 +154,10 @@ class SuturingStateMachine:
     def _extraction_state(self):
         if self.circular_motion is None:
             offset = -0.6
-            offset2 = -0.2
+            offset2 = -0.65
             if self.arm_name == 'PSM2':
                 offset = -0.6
-                offset2 = -0.5
+                offset2 = -0.65
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
