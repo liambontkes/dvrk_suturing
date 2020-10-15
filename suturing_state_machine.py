@@ -141,7 +141,7 @@ class SuturingStateMachine:
 
     def _grasp_needle_state(self):
         if self.psm.get_desired_jaw_position() >= 0.:
-            self.psm.close_jaw(blocking=True)
+            self.psm.close_jaw(blocking=False)
 
     
     def _grasp_needle_next(self):
@@ -154,10 +154,10 @@ class SuturingStateMachine:
     def _extraction_state(self):
         if self.circular_motion is None:
             offset = -0.55
-            offset2 = 0
+            offset2 = -0.2
             if self.arm_name == 'PSM2':
                 offset = -0.55
-                offset2 = 0
+                offset2 = -0.4
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
@@ -190,7 +190,7 @@ class SuturingStateMachine:
                 offset = -0.2
             self.pickup_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                        self.circle_pose,
-                                                       self.insertion_rads + self.extraction_rads +offset,self.arm_name)
+                                                  self.insertion_rads + self.extraction_rads + offset,self.arm_name)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.pickup_pose)
 
     def _pickup_next(self):

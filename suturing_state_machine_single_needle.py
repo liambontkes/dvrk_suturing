@@ -210,15 +210,15 @@ class SuturingStateMachine:
             self.circle_pose_PSM2 = None
             self.circular_motion = None
             self.paired_pts_idx += 1
-            return SuturingState.PREPARE_INSERTION
-
             if self.paired_pts_idx < len(self.paired_pts):
                 return SuturingState.PREPARE_INSERTION
             else:
+                self.psm2.move_joint(PSM_HOME_JOINT_POS, blocking=True)
                 return SuturingState.DONE
 
         else:
             return SuturingState.GRASP_NEEDLE_PSM2
+
 
 
     def is_done(self):
@@ -235,7 +235,7 @@ class SuturingStateMachine:
         if self.state == SuturingState.DONE:
             self.psm2.move_joint(PSM_HOME_JOINT_POS, blocking=True)
             return
-        rospy.loginfo("Executing state {}".format(self.state))
+        # rospy.loginfo("Executing state {}".format(self.state))
         self.state = self.next_funs[self.state]()
 
 
