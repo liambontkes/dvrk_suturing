@@ -101,9 +101,9 @@ class SuturingStateMachine:
         overrotation_circle_pose = PyKDL.Frame(self.circle_pose.M, self.circle_pose.p 
                                              + self.circle_pose.M.Inverse() * PyKDL.Vector(0, 0.015, 0))
         try_this = False
-        offset = 0.2
+        offset = 1.7
         if self.arm_name == 'PSM2':
-            offset = 0.2
+            offset = 1.7
             try_this = False
         self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx][::-1],
                                                          overrotation_circle_pose,
@@ -121,9 +121,9 @@ class SuturingStateMachine:
 
     
     def _prepare_extraction_state(self):
-        offset = -0.45
+        offset = -0.6
         if self.arm_name == 'PSM2':
-            offset = -0.55
+            offset = -0.6
         pickup_rads = self.insertion_rads + np.pi + offset
         opposite_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                 self.circle_pose, pickup_rads,self.arm_name)
@@ -153,10 +153,10 @@ class SuturingStateMachine:
 
     def _extraction_state(self):
         if self.circular_motion is None:
-            offset = -0.55
+            offset = -0.6
             offset2 = -0.2
             if self.arm_name == 'PSM2':
-                offset = -0.55
+                offset = -0.6
                 offset2 = -0.5
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],

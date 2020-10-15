@@ -103,7 +103,7 @@ class SuturingStateMachine:
         overrotation_circle_pose = PyKDL.Frame(self.circle_pose.M, self.circle_pose.p 
                                              + self.circle_pose.M.Inverse() * PyKDL.Vector(0, 0.015, 0))
        
-        offset = 0.25
+        offset = 0.45
         self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx],
                                                          overrotation_circle_pose,
                                                          self.insertion_rads + np.pi + offset, 

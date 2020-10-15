@@ -77,8 +77,8 @@
     // see tool appendix for last 4 joints
     // for last joint, manual says [0, 30] but we need -20 to allow stronger torque, 80 to open wide
     "tool-joint-limit" : {
-        "lower" : [ -91.0, -91.0,   0.0, -1660.0, -175.0, 175.0, -175.0],
-        "upper" : [  91.0,  91.0, 320.0,  1660.0,  175.0,  175.0,  175.0]
+        "lower" : [ -91.0, -91.0,   0.0, -360.0, -175.0, 175.0, -175.0],
+        "upper" : [  91.0,  91.0, 320.0,  360.0,  175.0,  175.0,  175.0]
     }
     ,
     // values from dVRK user guide
