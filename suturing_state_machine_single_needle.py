@@ -25,7 +25,8 @@ class SuturingState(Enum):
     # grasp needle again
     GRASP_NEEDLE_PSM2 = 9
     # no more suture throws to execute
-    DONE = 11
+    DONE = 12
+    AFTER_PICKUP = 11
 
 
     RELEASE_NEEDLE_PSM2 = 10
@@ -52,13 +53,17 @@ class SuturingStateMachine:
         if self.circle_pose_PSM1 or self.circle_pose_PSM2 is None:
             self.circle_pose_PSM1 = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx], 'PSM1')
             self.circle_pose_PSM2 = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx], 'PSM2')
+            self.interm_pose = deepcopy(self.circle_pose_PSM2)
+            self.interm_pose.p[2] = self.interm_pose.p[2]+0.05
 
-        set_arm_dest(self.psm2, self.tf_world_to_psm2 * self.circle_pose_PSM2)
+        set_arm_dest(self.psm2, self.tf_world_to_psm2 * self.interm_pose)
+
         
 
     def _prepare_insertion_next(self):
   
-        if arm_pos_reached(self.psm2, self.tf_world_to_psm2 * self.circle_pose_PSM2.p):
+        if arm_pos_reached(self.psm2, self.tf_world_to_psm2 * self.interm_pose.p):
+            self.interm_pose = None
             return SuturingState.INSERTION
         else:
             return SuturingState.PREPARE_INSERTION
@@ -159,8 +164,8 @@ class SuturingStateMachine:
 
     def _extraction_state(self):
         if self.circular_motion is None:
-            offset = -0.55
-            offset2 = 0.15
+            offset = -0.6
+            offset2 = -0.65
             
             self.circular_motion = CircularMotion(self.psm1, self.tf_world_to_psm1, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
@@ -199,7 +204,6 @@ class SuturingStateMachine:
 
     def _pickup_next(self):
         if arm_pos_reached(self.psm2, self.tf_world_to_psm2 * self.pickup_pose.p):
-            self.pickup_pose = None
             return SuturingState.GRASP_NEEDLE_PSM2
         else:
             return SuturingState.PICKUP
@@ -210,15 +214,27 @@ class SuturingStateMachine:
             self.circle_pose_PSM2 = None
             self.circular_motion = None
             self.paired_pts_idx += 1
+            return SuturingState.AFTER_PICKUP
+
+        else:
+            return SuturingState.GRASP_NEEDLE_PSM2
+    
+    def _move_upwards_state(self):
+        self.interm_pose_pickup = deepcopy(self.pickup_pose)
+        self.interm_pose_pickup.p[2] = self.interm_pose_pickup.p[2]+0.01
+        set_arm_dest(self.psm2, self.tf_world_to_psm2 * self.interm_pose_pickup)
+
+    def _move_upwards_state_next(self):
+        if arm_pos_reached(self.psm2, self.tf_world_to_psm2 * self.interm_pose_pickup.p):
+            self.interm_pose_pickup = None
+            self.pickup_pose = None
             if self.paired_pts_idx < len(self.paired_pts):
                 return SuturingState.PREPARE_INSERTION
             else:
                 self.psm2.move_joint(PSM_HOME_JOINT_POS, blocking=True)
                 return SuturingState.DONE
-
         else:
-            return SuturingState.GRASP_NEEDLE_PSM2
-
+            return SuturingState.AFTER_PICKUP
 
 
     def is_done(self):
@@ -248,7 +264,8 @@ class SuturingStateMachine:
         self.paired_pts_idx = 0
         self.insertion_rads = insertion_rads
         self.extraction_rads = extraction_rads
-        
+        self.interm_pose = None
+        self.interm_pose_pickup = None
         self.state = SuturingState.PREPARE_INSERTION
 
         # evidence that i did not spend any time on good code design
@@ -273,7 +290,8 @@ class SuturingStateMachine:
             SuturingState.EXTRACTION : self._extraction_state,
             SuturingState.RELEASE_NEEDLE_PSM1 : self._release_needle_state_PSM1,
             SuturingState.PICKUP : self._pickup_state,
-            SuturingState.GRASP_NEEDLE_PSM2 : self._grasp_needle_state_PSM2
+            SuturingState.GRASP_NEEDLE_PSM2 : self._grasp_needle_state_PSM2,
+            SuturingState.AFTER_PICKUP : self._move_upwards_state
         }
 
         self. next_funs = {
@@ -287,5 +305,7 @@ class SuturingStateMachine:
             SuturingState.EXTRACTION : self._extraction_next,
             SuturingState.RELEASE_NEEDLE_PSM1 : self._release_needle_next_PSM1,
             SuturingState.PICKUP : self._pickup_next,
-            SuturingState.GRASP_NEEDLE_PSM2 : self._grasp_needle_next_PSM2
+            SuturingState.GRASP_NEEDLE_PSM2 : self._grasp_needle_next_PSM2,
+            SuturingState.AFTER_PICKUP : self._move_upwards_state_next
+            
         }

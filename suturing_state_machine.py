@@ -26,7 +26,9 @@ class SuturingState(Enum):
     # grasp needle again
     GRASP_NEEDLE_2 = 10
     # no more suture throws to execute
-    DONE = 11
+    AFTER_PICKUP = 11
+
+    DONE = 12
 
 
 class SuturingStateMachine:
@@ -56,11 +58,18 @@ class SuturingStateMachine:
     def _prepare_insertion_state(self):
         if self.circle_pose is None:
             self.circle_pose = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx], self.arm_name)
-        set_arm_dest(self.psm, self.tf_world_to_psm * self.circle_pose)
+        self.interm_pose = deepcopy(self.circle_pose)
+        self.interm_pose.p[2] = self.interm_pose.p[2]+0.05
+
+        set_arm_dest(self.psm, self.tf_world_to_psm * self.interm_pose)
+    
+
+        # set_arm_dest(self.psm, self.tf_world_to_psm * self.circle_pose)
 
 
     def _prepare_insertion_next(self):
-        if arm_pos_reached(self.psm, self.tf_world_to_psm * self.circle_pose.p):
+        if arm_pos_reached(self.psm, self.tf_world_to_psm * self.interm_pose.p):
+            self.interm_pose = None
             return SuturingState.INSERTION
         else:
             return SuturingState.PREPARE_INSERTION
@@ -195,7 +204,7 @@ class SuturingStateMachine:
 
     def _pickup_next(self):
         if arm_pos_reached(self.psm, self.tf_world_to_psm * self.pickup_pose.p):
-            self.pickup_pose = None
+            # self.pickup_pose = None
             return SuturingState.GRASP_NEEDLE_2
         else:
             return SuturingState.PICKUP
@@ -206,9 +215,22 @@ class SuturingStateMachine:
             self.circle_pose = None
             self.circular_motion = None
             self.paired_pts_idx += 1
-            return SuturingState.HOME
+            return SuturingState.AFTER_PICKUP
         else:
             return SuturingState.GRASP_NEEDLE_2
+
+    def _move_upwards_state(self):
+        self.interm_pose_pickup = deepcopy(self.pickup_pose)
+        self.interm_pose_pickup.p[2] = self.interm_pose_pickup.p[2]+0.01
+        set_arm_dest(self.psm, self.tf_world_to_psm * self.interm_pose_pickup)
+
+    def _move_upwards_state_next(self):
+        if arm_pos_reached(self.psm, self.tf_world_to_psm * self.interm_pose_pickup.p):
+            self.interm_pose_pickup = None
+            self.pickup_pose = None
+            return SuturingState.HOME
+        else:
+            return SuturingState.AFTER_PICKUP
 
 
     def is_done(self):
@@ -243,6 +265,9 @@ class SuturingStateMachine:
         self.prepare_extraction_pose = None
         self.pickup_pose = None
         self.arm_name = arm_name
+        self.interm_pose = None
+        self.interm_pose_pickup = None
+        
 
         self.state_funs = {
             SuturingState.HOME : self._home_state,
@@ -255,7 +280,8 @@ class SuturingStateMachine:
             SuturingState.EXTRACTION : self._extraction_state,
             SuturingState.RELEASE_NEEDLE_2: self._release_needle_state,
             SuturingState.PICKUP : self._pickup_state,
-            SuturingState.GRASP_NEEDLE_2 : self._grasp_needle_state
+            SuturingState.GRASP_NEEDLE_2 : self._grasp_needle_state,
+            SuturingState.AFTER_PICKUP : self._move_upwards_state
         }
 
         self. next_funs = {
@@ -270,4 +296,6 @@ class SuturingStateMachine:
             SuturingState.RELEASE_NEEDLE_2 : self._release_needle_2_next,
             SuturingState.PICKUP : self._pickup_next,
             SuturingState.GRASP_NEEDLE_2 : self._grasp_needle_2_next
+            ,
+            SuturingState.AFTER_PICKUP : self._move_upwards_state_next
         }

@@ -153,6 +153,7 @@ def calculate_circular_pose(entry_and_exit_points, entry_pose, circular_progress
     else:
         new_orientation.DoRotZ(-circular_progress_radians)
     
+    
     circle_center = fit_circle_to_points_and_radius(entry_pose, entry_and_exit_points, circle_radius,arm_name)
     # print("circle_center={}, circle_radius={}".format(circle_center, circle_radius))
     desired_angle_radial_vector = new_orientation * PyKDL.Vector(0, - circle_radius, 0)
