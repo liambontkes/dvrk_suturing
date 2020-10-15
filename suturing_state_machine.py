@@ -89,8 +89,8 @@ class SuturingStateMachine:
     
     def _release_needle_next(self):
         if self.jaw_fully_open():
-            # return SuturingState.OVERROTATE
-            return SuturingState.PREPARE_EXTRACTION
+            return SuturingState.OVERROTATE
+            # return SuturingState.PREPARE_EXTRACTION
         else:
             return SuturingState.RELEASE_NEEDLE
 
@@ -101,14 +101,14 @@ class SuturingStateMachine:
         overrotation_circle_pose = PyKDL.Frame(self.circle_pose.M, self.circle_pose.p 
                                              + self.circle_pose.M.Inverse() * PyKDL.Vector(0, 0.015, 0))
         try_this = False
-        offset = 0.25
+        offset = 0.2
         if self.arm_name == 'PSM2':
-            offset = -0.55
+            offset = 0.2
             try_this = False
-        self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx],
-                                                         self.circle_pose,
-                                                         self.insertion_rads + np.pi + offset, 
-                                                         NEEDLE_RADIUS,try_this=try_this)
+        self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx][::-1],
+                                                         overrotation_circle_pose,
+                                                         self.insertion_rads+offset, 
+                                                         NEEDLE_RADIUS+0.005,try_this=try_this)
         set_arm_dest(self.psm, self.tf_world_to_psm * self.overrotation_pose)
 
 
@@ -157,7 +157,7 @@ class SuturingStateMachine:
             offset2 = -0.2
             if self.arm_name == 'PSM2':
                 offset = -0.55
-                offset2 = -0.4
+                offset2 = -0.5
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
