@@ -9,5 +9,6 @@
 
 ## Things that are broken/bad/spaghetti
 - the dVRK doesn't track the desired poses strictly accurately, and sometimes the needle is rotated in the plane parallel to the dots, such that when we try to grab it on the opposite side, we miss slightly
+- needle to clip orientation matrix needs adjustment
 - The circle fitting seems to be giving circles that are slighly above the plane that the dots lie on
-- it seems that there's some sort of depth error in the camera
+- Depth detection accuracy of stereo camera depends on vision sensor resolution
