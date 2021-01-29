@@ -9,9 +9,9 @@ backports-abc==0.5
 backports.functools-lru-cache==1.6.1
 backports.shutil-get-terminal-size==1.0.0
 bleach==3.1.5
-bondpy==1.8.3
+# bondpy==1.8.3
 bqplot==0.12.12
-bzr==2.8.0.dev1
+# bzr==2.8.0.dev1
 # camera-calibration==1.14.0
 # camera-calibration-parsers==1.11.13
 # catkin==0.7.23
@@ -35,18 +35,18 @@ cycler==0.10.0
 Cython==0.26.1
 decorator==4.4.2
 defusedxml==0.6.0
-diagnostic-analysis==1.9.3
-diagnostic-common-diagnostics==1.9.3
-diagnostic-updater==1.9.3
+#diagnostic_analysis==1.9.3
+#diagnostic_common_diagnostics==1.9.3
+#diagnostic_updater==1.9.3
 distro==1.5.0
 docutils==0.16
-dynamic-reconfigure==1.6.3
+#dynamic-reconfigure==1.6.3
 empy==3.3.2
 entrypoints==0.3
 enum34==1.1.10
 funcsigs==1.0.2
-functools32==3.2.3.post2
-futures==3.3.0
+#functools32==3.2.3.post2
+# futures==3.3.0
 # gazebo-plugins==2.8.6
 #gazebo-ros==2.8.6
 #gencpp==0.6.5
@@ -61,7 +61,7 @@ idna==2.6
 #image-geometry==1.13.0
 importlib-metadata==1.6.0
 imutils==0.5.3
-incremental==16.10.1
+#incremental==16.10.1
 interactive-markers==1.11.5
 ipaddress==1.0.23
 ipykernel==4.10.1
@@ -84,7 +84,7 @@ keyrings.alt==3.0
 kiwisolver==1.1.0
 laser-geometry==1.6.5
 launchpadlib==1.10.6
-lazr.res#tfulclient==0.13.5
+lazr.restfulclient==0.13.5
 lazr.uri==1.0.3
 lazy-object-proxy==1.4.3
 lz4==0.10.1
