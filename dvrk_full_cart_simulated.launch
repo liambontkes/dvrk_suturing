@@ -2,10 +2,11 @@
 
 <arg name="ecm_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
 <arg name="psm1_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
-<arg name="dvrk_console_config" default="/home/parallels/suturing_ws/src/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
+<arg name="dvrk_console_config" default="/home/akhil/proj/RCL/dvrk_ws/src/dvrk-ros/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
 
 <node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM1" args="0 0 0 0 0 0 PSM1_RCM PSM1_base 20" />
 <node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM2" args="0 0 0 0 0 0 PSM2_RCM PSM2_base 20" />
+<node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM3" args="0 0 0 0 0 0 PSM3_RCM PSM3_base 20" />
 <node pkg="tf" type="static_transform_publisher" name="sim_2_ros_ECM" args="0 0 0 0  0 0 ECM_RCM ECM_base 20" />
   
 <node name="dvrk_node"
@@ -14,71 +15,7 @@
       args="-j $(arg dvrk_console_config)"                     
       output="screen"/>
 
-
-<!-- <group ns="/dvrk/PSM1">
-  <arg name="model" default="$(find dvrk_model)/model/PSM1.urdf.xacro" />
-  <arg name="gui" default="true" />
-  <arg name="rate" default="200" />
-
-  <param name="robot_description" command="rosrun xacro xacro $(arg model)"/>
-
-  <rosparam param="source_list" subst_value="True">
-          [/dvrk/PSM1/state_joint_current,
-           /dvrk/PSM1/state_jaw_current,
-           /dvrk/PSM1/state_gripper_current]
-      </rosparam>
-
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-    <remap from="/joint_state_publisher/enable_slider"
-            to="/dvrk_psm/joint_state_publisher/enable_slider"/>
-  </node>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-</group>
-
-<group ns="/dvrk/PSM2">
-  <arg name="model" default="$(find dvrk_model)/model/PSM2.urdf.xacro" />
-  <arg name="gui" default="true" />
-  <arg name="rate" default="200" />
-
-  <param name="robot_description" command="rosrun xacro xacro $(arg model)"/>
-
-  <rosparam param="source_list" subst_value="True">
-          [/dvrk/PSM2/state_joint_current,
-           /dvrk/PSM2/state_jaw_current,
-           /dvrk/PSM2/state_gripper_current]
-      </rosparam>
-
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-    <remap from="/joint_state_publisher/enable_slider"
-            to="/dvrk_psm/joint_state_publisher/enable_slider"/>
-  </node>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-</group>
-
-
-<group ns="/dvrk/ECM">
-  <arg name="model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
-  <arg name="gui" default="true" />
-  <arg name="rate" default="200" />
-
-  <param name="robot_description" command="rosrun xacro xacro $(arg model)"/>
-
-  <rosparam param="source_list" subst_value="True">
-          [/dvrk/ECM/state_joint_current,
-           /dvrk/ECM/state_jaw_current,
-           /dvrk/ECM/state_gripper_current]
-      </rosparam>
-
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-    <remap from="/joint_state_publisher/enable_slider"
-            to="/dvrk_ecm/joint_state_publisher/enable_slider"/>
-  </node>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-</group> -->
-
 <!-- This launches a static transform between the ECM and the camera frame in simulation -->
 <!-- <node pkg="tf" type="static_transform_publisher" name="ECM" args="0 0 0 4.71239 0 0 ecm_roll_link camera 20" /> -->
 <node pkg="simulation" name="image_flipper" type="image_flipper.py" />
 </launch>
-
-
