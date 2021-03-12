@@ -5,11 +5,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.10.2
 #   kernelspec:
-#     display_name: Python 2
+#     display_name: Python 3
 #     language: python
-#     name: python2
+#     name: python3
 # ---
 
 import jupyros as jr
@@ -21,7 +21,6 @@ import cv_bridge
 from copy import deepcopy
 import ipywidgets as widgets
 import PIL.Image
-from cStringIO import StringIO
 import matplotlib.pyplot as plt
 import dvrk
 import PyKDL
