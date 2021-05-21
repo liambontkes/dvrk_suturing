@@ -2,7 +2,7 @@
 
 <arg name="ecm_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
 <arg name="psm1_model" default="$(find dvrk_model)/model/ECM.urdf.xacro" />
-<arg name="dvrk_console_config" default="/home/akhil/proj/RCL/dvrk_ws/src/dvrk-ros/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
+<arg name="dvrk_console_config" default="/home/fizzer/catkin_ws/src/dvrk-ros/dvrk_suturing/dvrk-console_full-cart-simulated.json" />
 
 <node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM1" args="0 0 0 0 0 0 PSM1_RCM PSM1_base 20" />
 <node pkg="tf" type="static_transform_publisher" name="sim_2_ros_PSM2" args="0 0 0 0 0 0 PSM2_RCM PSM2_base 20" />
