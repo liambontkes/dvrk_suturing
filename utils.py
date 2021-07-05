@@ -101,12 +101,12 @@ def fit_circle_to_points_and_radius(circle_plane_pose, points, radius, arm_name)
     mean_x = np.mean([p1.x(), p2.x()])
     mean_y = np.mean([p1.y(), p2.y()])
     
-    # EXTREMELY BRITTLE, dependent on order that `points` are in
-    x = mean_x + (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
-    y = mean_y + (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
+    # EXTREMELY BRITTLE, dependent on order that `points` are in - added abs value to prevent domain errors
+    x = mean_x + (math.sqrt(abs(radius ** 2 - (q / 2) ** 2)) * (p1.y() - p2.y())) / q
+    y = mean_y + (math.sqrt(abs(radius ** 2 - (q / 2) ** 2)) * (p2.x() - p1.x())) / q
     if arm_name == 'PSM2':
-        x = mean_x - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p1.y() - p2.y())) / q
-        y = mean_y - (math.sqrt(radius ** 2 - (q / 2) ** 2) * (p2.x() - p1.x())) / q
+        x = mean_x - (math.sqrt(abs(radius ** 2 - (q / 2) ** 2)) * (p1.y() - p2.y())) / q
+        y = mean_y - (math.sqrt(abs(radius ** 2 - (q / 2) ** 2)) * (p2.x() - p1.x())) / q
     
     # this should return the circle whose center is above the line segment between
     # the two points but i have no idea why
@@ -127,7 +127,7 @@ def calculate_desired_entry_pose(entry_and_exit_point, arm_name):
     
     desired_rotation = \
         PyKDL.Rotation(desired_x_vector, desired_y_vector, desired_z_vector)
-#     desired_rotation.DoRotZ(0.2)
+    #desired_rotation.DoRotZ(0.2)
     
     desired_position = entry_and_exit_point[0] + (desired_z_vector * NEEDLE_Z_OFFSET)
     return PyKDL.Frame(desired_rotation, desired_position)

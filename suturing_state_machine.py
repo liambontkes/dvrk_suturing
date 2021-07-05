@@ -58,7 +58,7 @@ class SuturingStateMachine:
         if self.circle_pose is None:
             self.circle_pose = calculate_desired_entry_pose(self.paired_pts[self.paired_pts_idx], self.arm_name)
         self.interm_pose = deepcopy(self.circle_pose)
-        self.interm_pose.p[2] = self.interm_pose.p[2]+0.05
+        self.interm_pose.p[2] = self.interm_pose.p[2]+0.03 #0.05 is where it starts pre-entering tissue, 0.00 is tissue location
 
         set_arm_dest(self.psm, self.tf_world_to_psm * self.interm_pose)
     
@@ -113,8 +113,8 @@ class SuturingStateMachine:
         if self.arm_name == 'PSM2':
             offset = 1.7
             try_this = False
-        #if self.arm_name == 'PSM3':
-         #   offset = -1.7.
+        if self.arm_name == 'PSM3':
+            offset = -1.95
             try_this = False
         self.overrotation_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx][::-1],
                                                          overrotation_circle_pose,
@@ -132,7 +132,7 @@ class SuturingStateMachine:
 
     
     def _prepare_extraction_state(self):
-        offset = 0.6
+        offset = -0.6
         if self.arm_name == 'PSM2':
             offset = -0.6
         #if self.arm_name == 'PSM3':
@@ -155,6 +155,7 @@ class SuturingStateMachine:
     def _grasp_needle_state(self):
         if self.psm.get_desired_jaw_position() >= 0.:
             self.psm.close_jaw(blocking=False)
+     
 
     
     def _grasp_needle_next(self):
@@ -174,9 +175,9 @@ class SuturingStateMachine:
             if self.arm_name == 'PSM2':
                 offset = -0.6
                 offset2 = -0.65
-          #  if self.arm_name == 'PSM3':
-           #     offset = -0.3
-            #    offset2 = -0.325
+            #if self.arm_name == 'PSM3':
+             #   offset = 0.3
+              #  offset2 = 0.325
             self.circular_motion = CircularMotion(self.psm, self.tf_world_to_psm, NEEDLE_RADIUS,
                                                   self.paired_pts[self.paired_pts_idx],
                                                   self.circle_pose, 
@@ -209,8 +210,8 @@ class SuturingStateMachine:
                 offset = 0.2
             if self.arm_name =='PSM2':
                 offset = -0.2
-            #if self.arm_name =='PSM3':
-             #   offset = -0.1
+            if self.arm_name =='PSM3':
+                offset = -0.1
             self.pickup_pose = calculate_circular_pose(self.paired_pts[self.paired_pts_idx], 
                                                        self.circle_pose,
                                                   self.insertion_rads + self.extraction_rads + offset,self.arm_name)
