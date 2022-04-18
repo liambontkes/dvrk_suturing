@@ -9,7 +9,7 @@ backports-abc==0.5
 backports.functools-lru-cache==1.6.1
 backports.shutil-get-terminal-size==1.0.0
 bleach==3.1.5
-bondpy==1.8.3
+bondpy
 bqplot==0.12.12
 bzr==2.8.0.dev1
 # camera-calibration==1.14.0
@@ -21,7 +21,7 @@ bzr==2.8.0.dev1
 cbor==1.0.0
 chardet==3.0.4
 click==6.7
-cloudpickle==1.3.0
+cloudpickle
 colorama==0.3.7
 configobj==5.0.6
 configparser==4.0.2
@@ -35,12 +35,12 @@ cycler==0.10.0
 Cython==0.26.1
 decorator==4.4.2
 defusedxml==0.6.0
-diagnostic-analysis==1.9.3
-diagnostic-common-diagnostics==1.9.3
-diagnostic-updater==1.9.3
+diagnostic-analysis
+diagnostic-common-diagnostics
+diagnostic-updater
 distro==1.5.0
 docutils==0.16
-dynamic-reconfigure==1.6.3
+dynamic-reconfigure
 empy==3.3.2
 entrypoints==0.3
 enum34==1.1.10
@@ -82,9 +82,9 @@ kdl-parser-py==1.13.1
 keyring==10.6.0
 keyrings.alt==3.0
 kiwisolver==1.1.0
-laser-geometry==1.6.5
+laser-geometry
 launchpadlib==1.10.6
-lazr.res#tfulclient==0.13.5
+lazr.restfulclient==0.13.5
 lazr.uri==1.0.3
 lazy-object-proxy==1.4.3
 lz4==0.10.1
@@ -92,7 +92,7 @@ MarkupSafe==1.1.1
 matplotlib==2.2.5
 mccabe==0.6.1
 mercurial==4.5.3
-message-filters==1.14.5
+message-filters
 mistune==0.8.4
 mock==3.0.5
 mpi4py==2.0.0
@@ -138,7 +138,7 @@ pyrsistent==0.16.0
 pyserial==3.4
 python-dateutil==2.8.1
 python-gnupg==0.4.1
-python-qt-binding==0.4.0
+python-qt-binding
 python-snappy==0.5
 PyTrie==0.2
 pytz==2020.1
@@ -147,13 +147,13 @@ pyxdg==0.25
 PyYAML==5.3.1
 pyzmq==19.0.1
 qrcode==5.3
-qt-dotgraph==0.4.0
-qt-gui==0.4.0
-qt-gui-cpp==0.4.0
-qt-gui-py-common==0.4.0
+qt-dotgraph
+qt-gui
+qt-gui-cpp
+qt-gui-py-common
 qtconsole==4.7.4
 QtPy==1.9.0
-resource-retriever==1.12.6
+resource-retriever
 retrying==1.3.3
 roman==2.0.0
 #rosbag==1.14.5
@@ -222,7 +222,7 @@ scikit-image==0.14.5
 scipy==1.2.3
 SecretStorage==2.3.1
 Send2Trash==1.5.0
-sensor-msgs==1.12.7
+sensor-msgs
 service-identity==16.0.0
 simplegeneric==0.8.1
 simplejson==3.13.2
@@ -230,7 +230,7 @@ singledispatch==3.4.0.3
 six==1.15.0
 smach==2.0.1
 smach-ros==2.0.1
-smclib==1.8.3
+smclib
 subprocess32==3.5.4
 terminado==0.8.3
 testpath==0.4.4
@@ -240,7 +240,7 @@ testpath==0.4.4
 #tf2-kdl==0.6.5
 #tf2-py==0.6.5
 #tf2-ros==0.6.5
-topic-tools==1.14.5
+topic-tools
 tornado==5.1.1
 traitlets==4.3.3
 traittypes==0.2.1
@@ -248,7 +248,7 @@ trollius==2.0.1
 Twisted==17.9.0
 txaio==2.8.1
 u-msgpack-python==2.1
-urdfdom-py==0.4.3
+urdfdom-py
 vcstools==0.1.42
 wadllib==1.3.2
 wcwidth==0.1.9
